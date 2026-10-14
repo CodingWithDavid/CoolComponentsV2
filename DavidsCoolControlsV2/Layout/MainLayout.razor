@@ -1,0 +1,71 @@
+﻿@inherits LayoutComponentBase
+
+<a class="skip-link" href="#main-content">Skip to content</a>
+<header class="site-header">
+    <div class="container header-content">
+        <a class="brand" href="./" aria-label="David's Cool Components v2 home">
+            <img class="brand-logo" src="images/coding-with-david-logo.png" alt="" width="56" height="56" />
+            <span class="brand-title">David's Cool Components <span class="brand-version">v2</span></span>
+        </a>
+        <nav class="desktop-nav" aria-label="Main navigation">
+            <NavLink href="" Match="NavLinkMatch.All">Questionnaire</NavLink>
+            <NavLink href="carousel">Carousel</NavLink>
+            <NavLink href="credit-card">Credit Card</NavLink>
+            <NavLink href="hover-card">Hover Card</NavLink>
+        </nav>
+        <button class="menu-toggle" type="button" aria-label="@(menuOpen ? "Close navigation" : "Open navigation")" aria-expanded="@menuOpen.ToString().ToLowerInvariant()" aria-controls="mobile-menu" @onclick="ToggleMenu">
+            <Icon Name="@(menuOpen ? "close" : "menu")" />
+        </button>
+    </div>
+    <nav id="mobile-menu" class="mobile-nav" hidden="@(!menuOpen)" aria-label="Mobile navigation" @onkeydown="HandleMenuKey">
+        <NavLink href="" Match="NavLinkMatch.All" @onclick="CloseMenu">Questionnaire</NavLink>
+        <NavLink href="carousel" @onclick="CloseMenu">Carousel</NavLink>
+        <NavLink href="credit-card" @onclick="CloseMenu">Credit Card</NavLink>
+        <NavLink href="hover-card" @onclick="CloseMenu">Hover Card</NavLink>
+    </nav>
+</header>
+
+<main id="main-content" tabindex="-1">@Body</main>
+
+<footer class="site-footer">
+    <div class="container">
+        <div class="footer-grid">
+            <div class="footer-about">
+                <a class="brand" href="./" aria-label="David's Cool Components v2 home"><img class="brand-logo" src="images/coding-with-david-logo.png" alt="" width="64" height="64" /><span class="brand-title">David's Cool Components <span class="brand-version">v2</span></span></a>
+                <p>Building elite proof-of-concept enterprise applications with clean aesthetics and high-performance engineering standards.</p>
+            </div>
+            <nav aria-label="Controls">
+                <h2>Controls</h2>
+                <a href="./">Questionnaire</a>
+                <a href="carousel">Carousel</a>
+                <a href="credit-card">Credit Card</a>
+                <a href="hover-card">Hover Card</a>
+            </nav>
+            <nav aria-label="Resources">
+                <h2>Resources</h2>
+                <a href="info/documentation">Documentation</a>
+                <a href="info/api">API Reference</a>
+                <a href="info/status">System Status</a>
+            </nav>
+            <nav aria-label="Company">
+                <h2>Company</h2>
+                <a href="info/about">About Us</a>
+                <a href="info/careers">Careers</a>
+                <a href="info/privacy">Privacy Policy</a>
+            </nav>
+        </div>
+        <div class="footer-bottom">
+            <div><a href="info/terms">Terms of Service</a><a href="info/security">Security Policy</a></div>
+        </div>
+    </div>
+</footer>
+
+@code {
+    private bool menuOpen;
+    private void ToggleMenu() => menuOpen = !menuOpen;
+    private void CloseMenu() => menuOpen = false;
+    private void HandleMenuKey(KeyboardEventArgs args)
+    {
+        if (args.Key == "Escape") CloseMenu();
+    }
+}

@@ -1,0 +1,239 @@
+<div class="cc-widget">
+    <div class="cc-stage">
+        <CreditCardPreview NumberDigits="@NumberDigits" Name="@name" Expiry="@expiry" Cvc="@cvc" Brand="@brand" Focused="@focused" />
+        <p class="cc-brand-status">
+            @if (brand.IsKnown)
+            {
+                <span>Detected: <strong>@brand.DisplayName</strong></span>
+            }
+            else
+            {
+                <span>Start typing a number to detect the card brand</span>
+            }
+        </p>
+    </div>
+
+    <form class="cc-form" novalidate @onsubmit="SubmitAsync" autocomplete="on">
+        <div class="cc-field @FieldState(CardField.Number)">
+            <label for="@Id("number")">Card number</label>
+            <input @ref="numberInput" id="@Id("number")" type="text" inputmode="numeric" autocomplete="cc-number"
+                   placeholder="1234 5678 9012 3456" maxlength="23" spellcheck="false"
+                   value="@number" @oninput="OnNumberInputAsync"
+                   @onfocus="() => Focus(CardField.Number)" @onblur="() => Blur(CardField.Number)"
+                   aria-invalid="@Invalid(CardField.Number)" aria-describedby="@Described(CardField.Number, Id("number-hint"))" />
+            <p class="cc-hint" id="@Id("number-hint")">E.g.: 49..., 51..., 36..., 37...</p>
+            @Error(CardField.Number)
+        </div>
+
+        <div class="cc-field @FieldState(CardField.Name)">
+            <label for="@Id("name")">Name on card</label>
+            <input @ref="nameInput" id="@Id("name")" type="text" autocomplete="cc-name" placeholder="Jane Cooper"
+                   maxlength="26" spellcheck="false" @bind="name" @bind:event="oninput"
+                   @onfocus="() => Focus(CardField.Name)" @onblur="() => Blur(CardField.Name)"
+                   aria-invalid="@Invalid(CardField.Name)" aria-describedby="@Described(CardField.Name)" />
+            @Error(CardField.Name)
+        </div>
+
+        <div class="cc-row">
+            <div class="cc-field @FieldState(CardField.Expiry)">
+                <label for="@Id("expiry")">Valid thru</label>
+                <input @ref="expiryInput" id="@Id("expiry")" type="text" inputmode="numeric" autocomplete="cc-exp"
+                       placeholder="MM/YY" maxlength="5" value="@expiry" @oninput="OnExpiryInputAsync"
+                       @onfocus="() => Focus(CardField.Expiry)" @onblur="() => Blur(CardField.Expiry)"
+                       aria-invalid="@Invalid(CardField.Expiry)" aria-describedby="@Described(CardField.Expiry)" />
+                @Error(CardField.Expiry)
+            </div>
+
+            <div class="cc-field @FieldState(CardField.Cvc)">
+                <label for="@Id("cvc")">CVC</label>
+                <input @ref="cvcInput" id="@Id("cvc")" type="text" inputmode="numeric" autocomplete="cc-csc"
+                       placeholder="@(brand.Id == "amex" ? "1234" : "123")" maxlength="4" value="@cvc" @oninput="OnCvcInputAsync"
+                       @onfocus="() => Focus(CardField.Cvc)" @onblur="() => Blur(CardField.Cvc)"
+                       aria-invalid="@Invalid(CardField.Cvc)" aria-describedby="@Described(CardField.Cvc)" />
+                @Error(CardField.Cvc)
+            </div>
+        </div>
+
+        <div class="cc-actions">
+            <button type="submit" class="button button-primary">Validate card</button>
+            <button type="button" class="button button-secondary" @onclick="Reset">Clear</button>
+        </div>
+
+        <div class="cc-status @(summary is null ? null : "is-success")" role="status" aria-live="polite">
+            @if (summary is not null)
+            {
+                <Icon Name="check" />
+                <span>@summary.Brand ending in @summary.Last4 looks valid. Nothing was sent or stored.</span>
+            }
+        </div>
+
+        @if (ShowTestCards)
+        {
+            <div class="cc-samples">
+                <span>Try a test card:</span>
+                @foreach (var sample in Samples)
+                {
+                    <button type="button" @onclick="() => FillSample(sample)">@sample.Label</button>
+                }
+            </div>
+        }
+    </form>
+</div>
+
+@code {
+    private static readonly (string Label, string Number)[] Samples =
+    [
+        ("Visa", "4242424242424242"),
+        ("Mastercard", "5555555555554444"),
+        ("Amex", "378282246310005"),
+        ("Discover", "6011111111111117"),
+        ("Diners", "30569309025904"),
+        ("JCB", "3530111333300000"),
+        ("UnionPay", "6200000000000005"),
+    ];
+
+    private readonly string idPrefix = $"cc-{Guid.NewGuid():N}"[..11];
+    private readonly HashSet<CardField> touched = [];
+    private readonly Dictionary<CardField, string> errors = [];
+
+    private ElementReference numberInput, nameInput, expiryInput, cvcInput;
+    private string number = string.Empty;
+    private string name = string.Empty;
+    private string expiry = string.Empty;
+    private string cvc = string.Empty;
+    private CardBrand brand = CardBrand.Unknown;
+    private CardField focused;
+    private bool submitted;
+    private CardSummary? summary;
+
+    /// <summary>Raised with a masked summary (never the full number or CVC) when the card passes validation.</summary>
+    [Parameter] public EventCallback<CardSummary> OnValidSubmit { get; set; }
+
+    [Parameter] public bool ShowTestCards { get; set; } = true;
+
+    private string NumberDigits => CardTypes.Digits(number);
+
+    private int CvcMax => brand.IsKnown ? brand.CvcLength : 4;
+
+    private string Id(string suffix) => $"{idPrefix}-{suffix}";
+
+    private async Task OnNumberInputAsync(ChangeEventArgs e)
+    {
+        var raw = e.Value?.ToString() ?? string.Empty;
+        var digits = CardTypes.Digits(raw);
+        brand = CardTypes.Detect(digits);
+        digits = digits[..Math.Min(digits.Length, brand.MaxLength)];
+        if (cvc.Length > CvcMax) cvc = cvc[..CvcMax];
+        await ApplyFormattedAsync(raw, CardTypes.FormatNumber(digits, brand), v => number = v);
+    }
+
+    private Task OnExpiryInputAsync(ChangeEventArgs e)
+    {
+        var raw = e.Value?.ToString() ?? string.Empty;
+        return ApplyFormattedAsync(raw, CardTypes.FormatExpiry(raw), v => expiry = v);
+    }
+
+    private Task OnCvcInputAsync(ChangeEventArgs e)
+    {
+        var raw = e.Value?.ToString() ?? string.Empty;
+        return ApplyFormattedAsync(raw, CardTypes.Digits(raw, CvcMax), v => cvc = v);
+    }
+
+    // Blazor skips DOM updates when the new value matches the last rendered value. Rendering the raw
+    // text first ensures the cleaned-up value is always written back, even when a typed character is rejected.
+    private async Task ApplyFormattedAsync(string raw, string formatted, Action<string> set)
+    {
+        summary = null;
+        if (raw != formatted)
+        {
+            set(raw);
+            await Task.Yield();
+        }
+        set(formatted);
+        Revalidate();
+    }
+
+    private void Focus(CardField field) => focused = field;
+
+    private void Blur(CardField field)
+    {
+        touched.Add(field);
+        if (focused == field) focused = CardField.None;
+        Revalidate();
+    }
+
+    private void Revalidate()
+    {
+        errors.Clear();
+        AddError(CardField.Number, CardTypes.ValidateNumber(NumberDigits, brand));
+        AddError(CardField.Name, string.IsNullOrWhiteSpace(name) ? "Enter the name on the card." : null);
+        AddError(CardField.Expiry, CardTypes.ValidateExpiry(expiry, DateOnly.FromDateTime(DateTime.Today)));
+        AddError(CardField.Cvc, brand.IsKnown ? CardTypes.ValidateCvc(cvc, brand) : cvc.Length is 3 or 4 ? null : "Enter the 3 or 4-digit security code.");
+
+        void AddError(CardField field, string? message)
+        {
+            if (message is not null) errors[field] = message;
+        }
+    }
+
+    private async Task SubmitAsync()
+    {
+        submitted = true;
+        Revalidate();
+
+        if (errors.Count > 0)
+        {
+            var first = new[] { CardField.Number, CardField.Name, CardField.Expiry, CardField.Cvc }.First(errors.ContainsKey);
+            await (first switch
+            {
+                CardField.Number => numberInput,
+                CardField.Name => nameInput,
+                CardField.Expiry => expiryInput,
+                _ => cvcInput,
+            }).FocusAsync();
+            return;
+        }
+
+        var digits = NumberDigits;
+        summary = new CardSummary(brand.DisplayName, digits[^4..], name.Trim(), expiry);
+        await OnValidSubmit.InvokeAsync(summary);
+    }
+
+    private void Reset()
+    {
+        number = name = expiry = cvc = string.Empty;
+        brand = CardBrand.Unknown;
+        focused = CardField.None;
+        submitted = false;
+        summary = null;
+        touched.Clear();
+        errors.Clear();
+    }
+
+    private void FillSample((string Label, string Number) sample)
+    {
+        brand = CardTypes.Detect(sample.Number);
+        number = CardTypes.FormatNumber(sample.Number, brand);
+        if (string.IsNullOrWhiteSpace(name)) name = "Jane Cooper";
+        expiry = $"12/{(DateTime.Today.Year + 3) % 100:00}";
+        cvc = brand.Id == "amex" ? "1234" : "123";
+        summary = null;
+        Revalidate();
+    }
+
+    private bool ShowError(CardField field) => errors.ContainsKey(field) && (submitted || touched.Contains(field));
+
+    private string? Invalid(CardField field) => ShowError(field) ? "true" : null;
+
+    private string? Described(CardField field, string? hintId = null)
+    {
+        var ids = string.Join(' ', new[] { hintId, ShowError(field) ? Id($"{field}-error".ToLowerInvariant()) : null }.OfType<string>());
+        return ids.Length == 0 ? null : ids;
+    }
+
+    private string? FieldState(CardField field) => ShowError(field) ? "has-error" : focused == field ? "is-focused" : null;
+
+    private RenderFragment Error(CardField field) => ShowError(field)
+        ? @<p class="cc-error" id="@Id($"{field}-error".ToLowerInvariant())">@errors[field]</p>
+        : @<text></text>;
+}

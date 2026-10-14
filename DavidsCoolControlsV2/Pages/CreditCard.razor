@@ -1,0 +1,54 @@
+﻿@page "/credit-card"
+
+<PageTitle>Credit Card - David's Cool Components v2</PageTitle>
+
+<section class="page-hero">
+    <div class="container">
+        <div class="release-badge"><span class="status-dot"></span>Pure Blazor Component</div>
+        <h1>Interactive <span>Credit Card</span> Form</h1>
+        <p>Type a card number and watch the card come to life. The brand is detected as you type, fields format themselves, and the card flips over when you enter the security code.</p>
+    </div>
+</section>
+
+<section class="credit-card-section">
+    <div class="container">
+        <div class="credit-card-panel">
+            <CreditCardForm />
+        </div>
+        <p class="credit-card-notice">
+            <Icon Name="security" />
+            <span>Demo only. Card details stay in your browser and are never sent or stored. For real payments, use your payment provider's hosted fields to stay PCI compliant.</span>
+        </p>
+    </div>
+</section>
+
+<section class="section-space carousel-details">
+    <div class="container">
+        <div class="section-heading">
+            <p class="eyebrow">Under the Hood</p>
+            <h2>Smart Input, Zero JavaScript</h2>
+        </div>
+        <div class="features-grid">
+            @foreach (var detail in Details)
+            {
+                <article class="feature-card">
+                    <div class="feature-icon"><Icon Name="@detail.Icon" /></div>
+                    <h3>@detail.Title</h3>
+                    <p>@detail.Description</p>
+                </article>
+            }
+        </div>
+    </div>
+</section>
+
+@code {
+    private static readonly (string Icon, string Title, string Description)[] Details =
+    [
+        ("analytics", "Brand Detection", "Visa, Mastercard, American Express, Discover, Diners Club, JCB, and UnionPay are recognized from the first digits."),
+        ("workflow", "Auto Formatting", "Numbers are grouped to match each brand, expiry dates gain a slash, and non-digits are filtered out."),
+        ("check", "Real Validation", "Card numbers pass a Luhn checksum and length check, expiry dates must be in the future, and CVC length matches the brand."),
+        ("scaling", "3D Card Flip", "The card turns over when you reach the CVC, except American Express, which prints its code on the front."),
+        ("team", "Accessible", "Visible labels, browser autofill hints, inline error messages, and keyboard focus that jumps to the first problem."),
+        ("integration", "Pure C# and CSS", "All logic is C# compiled to WebAssembly. The card, chip, and flip are CSS, with no JavaScript or images."),
+    ];
+}

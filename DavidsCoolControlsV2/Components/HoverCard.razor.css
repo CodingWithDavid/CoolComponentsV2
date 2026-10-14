@@ -1,0 +1,98 @@
+.hover-card {
+    position: relative;
+    display: inline-block;
+}
+
+.hover-card-content {
+    --hc-tx: 0px;
+    --hc-ty: 0px;
+    --hc-sx: 0px;
+    --hc-sy: 0px;
+    position: absolute;
+    z-index: 40;
+    display: block;
+    width: min(var(--hc-width), calc(100vw - 32px));
+    padding: 16px;
+    border: 1px solid var(--line, #e2e8f0);
+    border-radius: 12px;
+    background: white;
+    color: var(--ink, #0f172a);
+    box-shadow: 0 16px 40px -12px rgb(15 23 42 / 22%), 0 2px 6px rgb(15 23 42 / 6%);
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.5;
+    text-align: left;
+    white-space: normal;
+    opacity: 0;
+    visibility: hidden;
+    scale: .96;
+    translate: calc(var(--hc-tx) + var(--hc-sx)) calc(var(--hc-ty) + var(--hc-sy));
+    transition: opacity .15s ease, scale .15s ease, translate .15s ease, visibility 0s linear .15s;
+}
+
+.hover-card[data-state="open"] > .hover-card-content {
+    --hc-sx: 0px;
+    --hc-sy: 0px;
+    opacity: 1;
+    visibility: visible;
+    scale: 1;
+    transition: opacity .15s ease, scale .15s ease, translate .15s ease;
+}
+
+/* Invisible bridge across the gap so the pointer can travel from the trigger onto the card. */
+.hover-card-content::before {
+    content: "";
+    position: absolute;
+}
+
+/* Bottom */
+[data-side="bottom"] > .hover-card-content { top: 100%; margin-top: var(--hc-offset); --hc-sy: -6px; transform-origin: top center; }
+[data-side="bottom"] > .hover-card-content::before { left: 0; right: 0; bottom: 100%; height: calc(var(--hc-offset) + 2px); }
+
+/* Top */
+[data-side="top"] > .hover-card-content { bottom: 100%; margin-bottom: var(--hc-offset); --hc-sy: 6px; transform-origin: bottom center; }
+[data-side="top"] > .hover-card-content::before { left: 0; right: 0; top: 100%; height: calc(var(--hc-offset) + 2px); }
+
+/* Right */
+[data-side="right"] > .hover-card-content { left: 100%; margin-left: var(--hc-offset); --hc-sx: -6px; transform-origin: center left; }
+[data-side="right"] > .hover-card-content::before { top: 0; bottom: 0; right: 100%; width: calc(var(--hc-offset) + 2px); }
+
+/* Left */
+[data-side="left"] > .hover-card-content { right: 100%; margin-right: var(--hc-offset); --hc-sx: 6px; transform-origin: center right; }
+[data-side="left"] > .hover-card-content::before { top: 0; bottom: 0; left: 100%; width: calc(var(--hc-offset) + 2px); }
+
+/* Alignment along the trigger edge */
+:is([data-side="top"], [data-side="bottom"])[data-align="start"] > .hover-card-content { left: 0; }
+:is([data-side="top"], [data-side="bottom"])[data-align="center"] > .hover-card-content { left: 50%; --hc-tx: -50%; }
+:is([data-side="top"], [data-side="bottom"])[data-align="end"] > .hover-card-content { right: 0; }
+:is([data-side="left"], [data-side="right"])[data-align="start"] > .hover-card-content { top: 0; }
+:is([data-side="left"], [data-side="right"])[data-align="center"] > .hover-card-content { top: 50%; --hc-ty: -50%; }
+:is([data-side="left"], [data-side="right"])[data-align="end"] > .hover-card-content { bottom: 0; }
+
+/* Narrow screens have no room beside the trigger, so side cards drop below it, centered. */
+@media (max-width: 639px) {
+    :is([data-side="left"], [data-side="right"]) > .hover-card-content {
+        inset: 100% auto auto 50%;
+        margin: var(--hc-offset) 0 0;
+        --hc-tx: -50%;
+        --hc-ty: 0px;
+        --hc-sx: 0px;
+        --hc-sy: -6px;
+        transform-origin: top center;
+    }
+
+    :is([data-side="left"], [data-side="right"]) > .hover-card-content::before {
+        inset: auto 0 100% 0;
+        width: auto;
+        height: calc(var(--hc-offset) + 2px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hover-card-content,
+    .hover-card[data-state="open"] > .hover-card-content {
+        translate: var(--hc-tx) var(--hc-ty);
+        scale: 1;
+        transition: none;
+    }
+}

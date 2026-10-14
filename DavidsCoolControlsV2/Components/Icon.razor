@@ -1,0 +1,27 @@
+<svg class="@Class" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+    <path d="@Path" />
+</svg>
+
+@code {
+    [Parameter] public string Name { get; set; } = "bolt";
+    [Parameter] public string? Class { get; set; }
+
+    private string Path => Name switch
+    {
+        "menu" => "M4 6h16M4 12h16m-7 6h7",
+        "close" => "M6 6l12 12M6 18L18 6",
+        "check" => "M9 12l2 2 4-4M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0",
+        "analytics" => "M3 21V11h6v10M9 21V7h6v14M15 21V3h6v18",
+        "security" => "M12 15v2M6 21h12a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2M8 11V7a4 4 0 0 1 8 0v4",
+        "integration" => "M5 11h14a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2M5 11V9a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v2M7 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2",
+        "scaling" => "M13 7h8v8M21 7l-8 8-4-4-6 6",
+        "team" => "M17 20h5v-2a3 3 0 0 0-5-2M7 20H2v-2a3 3 0 0 1 5-2M7 20v-2a5 5 0 0 1 10 0v2H7M15 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0M21 10a2 2 0 1 1-4 0 2 2 0 0 1 4 0M7 10a2 2 0 1 1-4 0 2 2 0 0 1 4 0",
+        "workflow" => "M8 4h8M9 4v6l-6 8a2 2 0 0 0 2 3h14a2 2 0 0 0 2-3l-6-8V4M6 15h12",
+        "star" => "M12 3l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3",
+        "calendar" => "M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2",
+        "map-pin" => "M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0M15 10a3 3 0 1 1-6 0 3 3 0 0 1 6 0",
+        "link" => "M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7",
+        "pointer" => "M9 9l5 12 1.8-5.2L21 14 9 9M7.2 2.2 8 5.1M5.1 8l-2.9-.8M14 4.1 12 6.2M6.2 12l-2.1 2",
+        _ => "M13 10V3L4 14h7v7l9-11h-7z"
+    };
+}

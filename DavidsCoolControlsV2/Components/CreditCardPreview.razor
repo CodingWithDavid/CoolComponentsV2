@@ -1,0 +1,93 @@
+<div class="cc-card brand-@Brand.Id @(IsFlipped ? "is-flipped" : null)" aria-hidden="true">
+    <div class="cc-card-inner">
+        <div class="cc-face cc-front">
+            <div class="cc-top">
+                <span class="cc-chip"><span></span></span>
+                <svg class="cc-contactless" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <path d="M8.5 8.5a5 5 0 0 1 0 7" /><path d="M12 6a9 9 0 0 1 0 12" /><path d="M15.5 3.5a13 13 0 0 1 0 17" />
+                </svg>
+                <span class="cc-brand-slot" @key="Brand.Id">@BrandMark</span>
+            </div>
+
+            <div class="cc-number @Active(CardField.Number)">
+                @foreach (var group in NumberGroups)
+                {
+                    <span>@group</span>
+                }
+            </div>
+
+            <div class="cc-bottom">
+                <div class="cc-name @Active(CardField.Name)">@NameDisplay</div>
+                <div class="cc-expiry @Active(CardField.Expiry)">
+                    <span class="cc-label">valid<br />thru</span>
+                    <span>@ExpiryDisplay</span>
+                </div>
+            </div>
+
+            @if (Brand.Id == "amex")
+            {
+                <div class="cc-amex-cvc @Active(CardField.Cvc)">@CvcDisplay</div>
+            }
+        </div>
+
+        <div class="cc-face cc-back">
+            <div class="cc-stripe"></div>
+            <div class="cc-signature-row">
+                <div class="cc-signature"></div>
+                <div class="cc-cvc @Active(CardField.Cvc)">@CvcDisplay</div>
+            </div>
+            <p class="cc-fineprint">This card is a demonstration. It is not a payment instrument and has no monetary value.</p>
+            <span class="cc-brand-slot cc-back-brand">@BrandMark</span>
+        </div>
+    </div>
+</div>
+
+@code {
+    private const char Dot = '•';
+
+    [Parameter] public string NumberDigits { get; set; } = string.Empty;
+    [Parameter] public string Name { get; set; } = string.Empty;
+    [Parameter] public string Expiry { get; set; } = string.Empty;
+    [Parameter] public string Cvc { get; set; } = string.Empty;
+    [Parameter] public CardBrand Brand { get; set; } = CardBrand.Unknown;
+    [Parameter] public CardField Focused { get; set; }
+
+    private bool IsFlipped => Focused == CardField.Cvc && Brand.Id != "amex";
+
+    private IEnumerable<string> NumberGroups
+    {
+        get
+        {
+            var length = CardTypes.DisplayLength(NumberDigits, Brand);
+            var padded = NumberDigits.PadRight(length, Dot);
+            return CardTypes.Group(padded, Brand.Groups);
+        }
+    }
+
+    private string NameDisplay => string.IsNullOrWhiteSpace(Name) ? "YOUR NAME HERE" : Name.Trim().ToUpperInvariant();
+
+    private string ExpiryDisplay
+    {
+        get
+        {
+            var digits = CardTypes.Digits(Expiry).PadRight(4, Dot);
+            return $"{digits[..2]}/{digits[2..]}";
+        }
+    }
+
+    private string CvcDisplay => Cvc.PadRight(Brand.IsKnown ? Brand.CvcLength : 3, Dot);
+
+    private string? Active(CardField field) => Focused == field ? "is-active" : null;
+
+    private RenderFragment BrandMark => Brand.Id switch
+    {
+        "visa" => @<span class="mark mark-visa">VISA</span>,
+        "mastercard" => @<span class="mark mark-mastercard"><i></i><i></i><b>mastercard</b></span>,
+        "amex" => @<span class="mark mark-amex">AMERICAN<br />EXPRESS</span>,
+        "discover" => @<span class="mark mark-discover">DISC<i></i>VER</span>,
+        "diners" => @<span class="mark mark-diners"><i></i>Diners Club</span>,
+        "jcb" => @<span class="mark mark-jcb"><i>J</i><i>C</i><i>B</i></span>,
+        "unionpay" => @<span class="mark mark-unionpay">UnionPay</span>,
+        _ => @<span class="mark mark-unknown"></span>,
+    };
+}

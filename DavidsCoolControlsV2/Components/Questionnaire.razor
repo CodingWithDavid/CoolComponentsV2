@@ -1,0 +1,217 @@
+@* A multi-step questionnaire inspired by shadcn/ui: single choice, multiple choice,
+   freeform answers, skippable items, letter shortcuts, and validation. No JavaScript. *@
+
+<form class="questionnaire" novalidate @onsubmit="() => { }" @onsubmit:preventDefault @onkeydown="HandleKeyAsync">
+    <div class="q-progress">
+        <span>Question @(index + 1) of @Items.Count</span>
+        <div class="q-progress-track" role="progressbar" aria-label="Questionnaire progress"
+             aria-valuemin="0" aria-valuemax="@Items.Count" aria-valuenow="@(index + 1)">
+            <span style="width: @ProgressPercent%"></span>
+        </div>
+    </div>
+
+    @{ var item = Current; var answer = answers[item.Name]; }
+    <fieldset @ref="fieldsetRef" tabindex="-1"
+              class="q-item @(movingBack ? "q-back" : "q-forward")-@(index % 2)"
+              aria-describedby="@DescribedBy(item)" aria-invalid="@(showError ? "true" : null)">
+        <legend class="q-title">@item.Prompt</legend>
+        @if (item.Description is not null)
+        {
+            <p id="@($"{id}-desc")" class="q-description">@item.Description</p>
+        }
+
+        <div class="q-choices">
+            @for (var i = 0; i < item.Choices.Count; i++)
+            {
+                var choice = item.Choices[i];
+                var selected = answer.Selected.Contains(choice.Value);
+                var choiceIndex = i;
+                <label @key="(item.Name + ':' + choice.Value)" class="q-choice @(selected ? "is-selected" : null)">
+                    <input type="@(item.Multiple ? "checkbox" : "radio")" name="@($"{id}-{item.Name}")" value="@choice.Value"
+                           checked="@selected" aria-invalid="@(showError ? "true" : null)" @ref="choiceRefs[choiceIndex]"
+                           @onchange="() => Toggle(item, answer, choice.Value)" />
+                    <span class="q-indicator @(item.Multiple ? "q-check" : "q-radio")" aria-hidden="true"></span>
+                    <span class="q-choice-text">
+                        <span class="q-choice-label">@choice.Label</span>
+                        @if (choice.Description is not null)
+                        {
+                            <span class="q-choice-description">@choice.Description</span>
+                        }
+                    </span>
+                    <kbd class="q-kbd" aria-hidden="true">@Shortcut(i)</kbd>
+                </label>
+            }
+
+            @if (item.InputLabel is not null)
+            {
+                <input @key="item.Name" class="q-input @(string.IsNullOrWhiteSpace(answer.Text) ? null : "is-filled")" type="text"
+                       aria-label="@item.InputLabel" placeholder="@item.InputPlaceholder" maxlength="80"
+                       value="@answer.Text" @oninput="e => SetText(item, answer, e.Value?.ToString())"
+                       @onkeydown="InputKeyAsync" @onkeydown:stopPropagation="true" />
+            }
+        </div>
+
+        @if (showError)
+        {
+            <p id="@($"{id}-error")" class="q-error" role="alert">@ErrorText(item)</p>
+        }
+    </fieldset>
+
+    <div class="q-actions" @onkeydown:stopPropagation="true">
+        @if (index > 0)
+        {
+            <button type="button" class="q-button q-ghost" @onclick="PreviousAsync">Previous</button>
+        }
+        <span class="q-spacer"></span>
+        @if (!item.Required)
+        {
+            <button type="button" class="q-button q-ghost" @onclick="SkipAsync">Skip</button>
+        }
+        <button type="button" class="q-button q-primary" aria-keyshortcuts="Enter" @onclick="AdvanceAsync">
+            @(IsLast ? SubmitText : "Next")
+        </button>
+    </div>
+</form>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<QuestionnaireItem> Items { get; set; } = [];
+    [Parameter] public EventCallback<IReadOnlyDictionary<string, QuestionnaireAnswer>> OnSubmit { get; set; }
+    [Parameter] public string SubmitText { get; set; } = "Submit";
+
+    private readonly string id = $"q{Guid.NewGuid():N}"[..9];
+    private readonly Dictionary<string, QuestionnaireAnswer> answers = [];
+    private ElementReference fieldsetRef;
+    private readonly ElementReference[] choiceRefs = new ElementReference[26];
+    private int index;
+    private bool movingBack;
+    private bool showError;
+    private bool focusItem;
+    private int? focusChoice;
+
+    private QuestionnaireItem Current => Items[index];
+    private bool IsLast => index == Items.Count - 1;
+    private int ProgressPercent => (int)Math.Round((index + 1) * 100.0 / Items.Count);
+
+    protected override void OnParametersSet()
+    {
+        foreach (var item in Items)
+        {
+            answers.TryAdd(item.Name, new QuestionnaireAnswer());
+        }
+        index = Math.Clamp(index, 0, Math.Max(0, Items.Count - 1));
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (focusItem)
+        {
+            focusItem = false;
+            await fieldsetRef.FocusAsync();
+        }
+        else if (focusChoice is int choice)
+        {
+            focusChoice = null;
+            await choiceRefs[choice].FocusAsync();
+        }
+    }
+
+    private static string Shortcut(int i) => ((char)('A' + i)).ToString();
+
+    private string? DescribedBy(QuestionnaireItem item)
+    {
+        var ids = new List<string>();
+        if (item.Description is not null) ids.Add($"{id}-desc");
+        if (showError) ids.Add($"{id}-error");
+        return ids.Count == 0 ? null : string.Join(' ', ids);
+    }
+
+    private static string ErrorText(QuestionnaireItem item) => item.InputLabel is not null
+        ? "Pick an answer or type your own to continue."
+        : item.Multiple ? "Select at least one answer to continue." : "Pick an answer to continue.";
+
+    private void Toggle(QuestionnaireItem item, QuestionnaireAnswer answer, string value)
+    {
+        if (item.Multiple)
+        {
+            if (!answer.Selected.Remove(value)) answer.Selected.Add(value);
+        }
+        else
+        {
+            answer.Selected.Clear();
+            answer.Selected.Add(value);
+            answer.Text = "";
+        }
+        answer.Skipped = false;
+        showError = false;
+    }
+
+    private void SetText(QuestionnaireItem item, QuestionnaireAnswer answer, string? text)
+    {
+        answer.Text = text ?? "";
+        if (!item.Multiple && !string.IsNullOrWhiteSpace(answer.Text))
+        {
+            answer.Selected.Clear();
+        }
+        answer.Skipped = false;
+        showError = false;
+    }
+
+    private Task InputKeyAsync(KeyboardEventArgs e) => e.Key == "Enter" ? AdvanceAsync() : Task.CompletedTask;
+
+    private Task HandleKeyAsync(KeyboardEventArgs e)
+    {
+        if (e.CtrlKey || e.AltKey || e.MetaKey) return Task.CompletedTask;
+        if (e.Key == "Enter") return AdvanceAsync();
+        if (e.Key.Length != 1) return Task.CompletedTask;
+
+        var i = char.ToUpperInvariant(e.Key[0]) - 'A';
+        if (i >= 0 && i < Current.Choices.Count)
+        {
+            Toggle(Current, answers[Current.Name], Current.Choices[i].Value);
+        }
+        return Task.CompletedTask;
+    }
+
+    private async Task AdvanceAsync()
+    {
+        var item = Current;
+        if (item.Required && !answers[item.Name].HasValue)
+        {
+            showError = true;
+            focusChoice = 0;
+            return;
+        }
+
+        if (IsLast)
+        {
+            await OnSubmit.InvokeAsync(answers);
+            return;
+        }
+        Go(index + 1);
+    }
+
+    private Task SkipAsync()
+    {
+        var answer = answers[Current.Name];
+        answer.Selected.Clear();
+        answer.Text = "";
+        answer.Skipped = true;
+        if (IsLast) return OnSubmit.InvokeAsync(answers);
+        Go(index + 1);
+        return Task.CompletedTask;
+    }
+
+    private Task PreviousAsync()
+    {
+        Go(index - 1);
+        return Task.CompletedTask;
+    }
+
+    private void Go(int next)
+    {
+        movingBack = next < index;
+        index = next;
+        showError = false;
+        focusItem = true;
+    }
+}

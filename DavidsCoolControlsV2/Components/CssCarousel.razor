@@ -1,0 +1,50 @@
+@* State lives in native radio inputs, and CSS reacts to :checked, so no JavaScript or C# events are needed. *@
+<section class="carousel" aria-roledescription="carousel" aria-label="@Label">
+    <p class="carousel-instructions">Use the left and right arrow keys to change slides.</p>
+    <div class="carousel-viewport">
+        @for (var i = 0; i < Slides.Count; i++)
+        {
+            var slide = Slides[i];
+            var index = i;
+            <input type="radio"
+                   class="carousel-control"
+                   name="@groupName"
+                   id="@SlideId(index)"
+                   checked="@(index == 0)"
+                   aria-label="@($"Slide {index + 1} of {Slides.Count}: {slide.Title}")" />
+            <figure class="carousel-slide" role="group" aria-roledescription="slide" aria-label="@($"{index + 1} of {Slides.Count}")">
+                <img src="@slide.ImageUrl" alt="@slide.AltText" loading="@(index == 0 ? "eager" : "lazy")" decoding="async" />
+                <figcaption class="carousel-caption">
+                    <span class="carousel-count">@((index + 1).ToString("00")) <span>/ @Slides.Count.ToString("00")</span></span>
+                    <strong>@slide.Title</strong>
+                    <span class="carousel-text">@slide.Caption</span>
+                    <a class="carousel-credit" href="@slide.SourceUrl" target="_blank" rel="noopener noreferrer">
+                        Photo: @slide.Credit · @slide.License<span class="visually-hidden"> (opens in a new tab)</span>
+                    </a>
+                </figcaption>
+                <label class="carousel-arrow carousel-prev" for="@SlideId(Wrap(index - 1))" title="Previous slide" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+                </label>
+                <label class="carousel-arrow carousel-next" for="@SlideId(Wrap(index + 1))" title="Next slide" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+                </label>
+                <div class="carousel-dots" aria-hidden="true">
+                    @for (var d = 0; d < Slides.Count; d++)
+                    {
+                        <label for="@SlideId(d)" class="@(d == index ? "active" : null)" title="@($"Slide {d + 1}")"></label>
+                    }
+                </div>
+            </figure>
+        }
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<CarouselSlide> Slides { get; set; } = [];
+    [Parameter] public string Label { get; set; } = "Image carousel";
+
+    private readonly string groupName = $"carousel-{Guid.NewGuid():N}";
+
+    private string SlideId(int index) => $"{groupName}-{index}";
+    private int Wrap(int index) => (index + Slides.Count) % Slides.Count;
+}

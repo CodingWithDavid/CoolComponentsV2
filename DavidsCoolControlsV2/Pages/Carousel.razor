@@ -1,0 +1,105 @@
+﻿@page "/carousel"
+
+<PageTitle>Carousel - David's Cool Components v2</PageTitle>
+
+<section class="page-hero">
+    <div class="container">
+        <div class="release-badge"><span class="status-dot"></span>Zero JavaScript Component</div>
+        <h1>The Good Dogs <span>Carousel</span></h1>
+        <p>A reusable Blazor component powered entirely by HTML radio inputs and CSS. Click the arrows or dots, or focus the carousel and use the arrow keys.</p>
+    </div>
+</section>
+
+<section class="carousel-section">
+    <div class="container">
+        <CssCarousel Slides="DogSlides" Label="Dog photo gallery" />
+    </div>
+</section>
+
+<section class="section-space carousel-details">
+    <div class="container">
+        <div class="section-heading">
+            <p class="eyebrow">Under the Hood</p>
+            <h2>Pure HTML &amp; CSS, Packaged for Blazor</h2>
+        </div>
+        <div class="features-grid">
+            @foreach (var detail in Details)
+            {
+                <article class="feature-card">
+                    <div class="feature-icon"><Icon Name="@detail.Icon" /></div>
+                    <h3>@detail.Title</h3>
+                    <p>@detail.Description</p>
+                </article>
+            }
+        </div>
+
+        <div class="photo-credits">
+            <h2>Photo credits</h2>
+            <p>Images from Wikimedia Commons featured pictures, resized for the web.</p>
+            <ul>
+                @foreach (var slide in DogSlides)
+                {
+                    <li>
+                        <a href="@slide.SourceUrl" target="_blank" rel="noopener noreferrer">@slide.Title<span class="visually-hidden"> (opens in a new tab)</span></a>
+                        by @slide.Credit, <a href="@LicenseUrl(slide.License)" target="_blank" rel="noopener noreferrer">@slide.License<span class="visually-hidden"> (opens in a new tab)</span></a>
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+</section>
+
+@code {
+    private static readonly CarouselSlide[] DogSlides =
+    [
+        new("images/dogs/dalmatian-fetch.jpg",
+            "A Dalmatian in a harness leaping across a dry grassy field with a stick in its mouth",
+            "Fetch Champion",
+            "A Dalmatian in full flight, proudly returning the stick at top speed.",
+            "Lucasbosch", "CC BY-SA 4.0",
+            "https://commons.wikimedia.org/wiki/File:Dalmatian_fetching_a_stick.jpg"),
+        new("images/dogs/bulldogs-swimming.jpg",
+            "Two French bulldogs, one fawn and one black, swimming in open water wearing orange life jackets",
+            "Safety First Swim Team",
+            "Two French bulldogs paddle along in matching orange life jackets.",
+            "W.carter", "CC0",
+            "https://commons.wikimedia.org/wiki/File:Two_French_bulldogs_swimming_in_life_jackets.jpg"),
+        new("images/dogs/golden-retriever.jpg",
+            "Side profile of a golden retriever's head gazing upward against a blurred frosty background",
+            "Golden Retriever",
+            "Calm, attentive, and endlessly loyal, photographed in Dülmen, Germany.",
+            "Dietmar Rabich", "CC BY-SA 4.0",
+            "https://commons.wikimedia.org/wiki/File:D%C3%BClmen,_Hausd%C3%BClmen,_Golden_Retriever_--_2022_--_5945.jpg"),
+        new("images/dogs/puppies-playing.jpg",
+            "Two puppies wrestling on the ground, one standing over the other, lit by the setting sun",
+            "Playtime Puppies",
+            "Two puppies settle who is boss in a golden-hour wrestling match.",
+            "Basile Morin", "CC BY-SA 4.0",
+            "https://commons.wikimedia.org/wiki/File:Two_puppies_playing_together_one_standing_over_the_other_at_golden_hour_in_Don_Det_Laos.jpg"),
+        new("images/dogs/golden-hour-run.jpg",
+            "Four dogs running across a grassy field beside wooden village houses under a dramatic cloudy sky",
+            "Countryside Pack",
+            "Four friends dash across the fields of Don Det, Laos, beneath a stormy sky.",
+            "Basile Morin", "CC BY-SA 4.0",
+            "https://commons.wikimedia.org/wiki/File:Four_dogs_running_at_golden_hour_in_the_countryside_of_Don_Det_Laos.jpg"),
+        new("images/dogs/dog-in-water.jpg",
+            "A brown dog mostly submerged in calm water, looking toward the camera in warm evening light",
+            "Cooling Off",
+            "A curious dog takes a relaxing soak in the golden evening light.",
+            "Basile Morin", "CC BY-SA 4.0",
+            "https://commons.wikimedia.org/wiki/File:Liver_yellow_dog_in_the_water_looking_at_viewer_at_golden_hour_in_Don_Det_Laos.jpg")
+    ];
+
+    private static readonly (string Icon, string Title, string Description)[] Details =
+    [
+        ("integration", "Radio-Driven State", "Each slide is paired with a hidden radio input. The :checked selector reveals the active slide, with no JavaScript or C# event handlers."),
+        ("workflow", "CSS Transitions", "Slides crossfade while images slowly zoom and captions rise into place. Motion is disabled for reduced-motion users."),
+        ("security", "Accessible by Default", "Native radio inputs support arrow-key navigation, screen-reader labels, and focus rings without custom keyboard code.")
+    ];
+
+    private static string LicenseUrl(string license) => license switch
+    {
+        "CC0" => "https://creativecommons.org/publicdomain/zero/1.0/",
+        _ => "https://creativecommons.org/licenses/by-sa/4.0/"
+    };
+}

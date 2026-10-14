@@ -1,0 +1,174 @@
+﻿@page "/hover-card"
+
+<PageTitle>Hover Card - David's Cool Components v2</PageTitle>
+
+<section class="page-hero">
+    <div class="container">
+        <div class="release-badge"><span class="status-dot"></span>Pure Blazor Component</div>
+        <h1>The <span>Hover Card</span></h1>
+        <p>Preview the content behind a link before you follow it. Hover the trigger and pause, or reach it with the Tab key. Press Escape to dismiss.</p>
+    </div>
+</section>
+
+<section class="hover-demos">
+    <div class="container hover-demo-grid">
+        <article class="hover-demo hover-demo-wide">
+            <header>
+                <h2>Secret card</h2>
+                <p>Hover the button, pause for a moment, and see what pops up.</p>
+            </header>
+            <div class="hover-demo-stage">
+                <HoverCard>
+                    <Trigger>
+                        <button type="button" class="hc-trigger-link">Try Me</button>
+                    </Trigger>
+                    <ChildContent>
+                        <span class="hc-profile">
+                            <span class="hc-avatar hc-avatar-glow" aria-hidden="true">✦</span>
+                            <span class="hc-profile-body">
+                                <strong>You found the secret card! 🎉</strong>
+                                <span>Zero JavaScript was harmed in the making of this popup. It's pure C#, Blazor, and a little CSS magic.</span>
+                                <span class="hc-meta"><Icon Name="pointer" /> Appeared after a dramatic 0.7 second pause</span>
+                            </span>
+                        </span>
+                    </ChildContent>
+                </HoverCard>
+            </div>
+        </article>
+
+        <article class="hover-demo hover-demo-wide">
+            <header>
+                <h2>Sides and alignment</h2>
+                <p>Place the card on any side of its trigger, aligned to the start, center, or end.</p>
+            </header>
+            <div class="hc-align-picker" role="radiogroup" aria-label="Alignment">
+                @foreach (var align in Enum.GetValues<HoverCardAlign>())
+                {
+                    <button type="button" role="radio" aria-checked="@(selectedAlign == align ? "true" : "false")"
+                            class="@(selectedAlign == align ? "is-selected" : null)" @onclick="() => selectedAlign = align">@align</button>
+                }
+            </div>
+            <div class="hover-demo-stage hc-sides">
+                @foreach (var side in Enum.GetValues<HoverCardSide>())
+                {
+                    <HoverCard Side="side" Align="selectedAlign" Width="240" OpenDelay="150" CloseDelay="150">
+                        <Trigger>
+                            <button type="button" class="button button-secondary hc-side-button">@side</button>
+                        </Trigger>
+                        <ChildContent>
+                            <span class="hc-side-card">
+                                <strong>@side, @selectedAlign.ToString().ToLowerInvariant()</strong>
+                                <span>This card opens on the @side.ToString().ToLowerInvariant() side of its trigger.</span>
+                            </span>
+                        </ChildContent>
+                    </HoverCard>
+                }
+            </div>
+        </article>
+
+        <article class="hover-demo">
+            <header>
+                <h2>Link previews in text</h2>
+                <p>Hover cards work inline, inside running text.</p>
+            </header>
+            <p class="hc-prose">
+                This site is built with
+                @LinkPreview(Previews[0])
+                and runs in the browser on
+                @LinkPreview(Previews[1]).
+            </p>
+        </article>
+
+        <article class="hover-demo">
+            <header>
+                <h2>Delay playground</h2>
+                <p>Tune how long the card waits before opening and closing.</p>
+            </header>
+            <div class="hc-sliders">
+                <label>
+                    <span>Open delay <output>@openDelay ms</output></span>
+                    <input type="range" min="0" max="1500" step="50" @bind="openDelay" @bind:event="oninput" />
+                </label>
+                <label>
+                    <span>Close delay <output>@closeDelay ms</output></span>
+                    <input type="range" min="0" max="1500" step="50" @bind="closeDelay" @bind:event="oninput" />
+                </label>
+            </div>
+            <div class="hover-demo-stage hover-demo-stage-compact">
+                <HoverCard OpenDelay="openDelay" CloseDelay="closeDelay" Side="HoverCardSide.Top" OpenChanged="open => playgroundOpen = open">
+                    <Trigger>
+                        <button type="button" class="button button-primary"><Icon Name="pointer" /> Hover me</button>
+                    </Trigger>
+                    <ChildContent>
+                        <span class="hc-side-card">
+                            <strong>Opened after @openDelay ms</strong>
+                            <span>Move away and it closes after @closeDelay ms. Move onto the card and it stays open.</span>
+                        </span>
+                    </ChildContent>
+                </HoverCard>
+                <p class="hc-state">Card is <strong class="@(playgroundOpen ? "is-open" : null)">@(playgroundOpen ? "open" : "closed")</strong></p>
+            </div>
+        </article>
+    </div>
+</section>
+
+<section class="section-space carousel-details">
+    <div class="container">
+        <div class="section-heading">
+            <p class="eyebrow">Under the Hood</p>
+            <h2>Built for Blazor, No JavaScript</h2>
+        </div>
+        <div class="features-grid">
+            @foreach (var detail in Details)
+            {
+                <article class="feature-card">
+                    <div class="feature-icon"><Icon Name="@detail.Icon" /></div>
+                    <h3>@detail.Title</h3>
+                    <p>@detail.Description</p>
+                </article>
+            }
+        </div>
+    </div>
+</section>
+
+@code {
+    private sealed record Preview(string Text, string Title, string Description, string Url, string Host, string Monogram, string Color);
+
+    private static readonly Preview[] Previews =
+    [
+        new("Blazor", "Blazor", "Build interactive web UIs with C# instead of JavaScript, using reusable components.",
+            "https://dotnet.microsoft.com/apps/aspnet/web-apps/blazor", "dotnet.microsoft.com", "B", "#512bd4"),
+        new("WebAssembly", "WebAssembly", "A portable binary instruction format that lets languages like C# run in the browser at near-native speed.",
+            "https://webassembly.org", "webassembly.org", "W", "#654ff0"),
+    ];
+
+    private static readonly (string Icon, string Title, string Description)[] Details =
+    [
+        ("pointer", "Hover Intent", "An open delay filters out accidental pass-overs, and a close delay lets the pointer travel onto the card."),
+        ("scaling", "Four Sides, Three Alignments", "Top, right, bottom, or left, aligned to start, center, or end. Side cards drop below on narrow screens."),
+        ("team", "Keyboard Friendly", "Focusing the trigger opens the card right away, and Escape closes it."),
+        ("workflow", "Smooth Motion", "Cards fade, scale, and slide in from their side, and motion is disabled when reduced motion is preferred."),
+        ("integration", "Any Content", "Pass any trigger and any markup through Trigger and ChildContent render fragments."),
+        ("check", "Zero JavaScript", "Timing runs in C# with cancellable delays. Positioning and animation are pure CSS."),
+    ];
+
+    private HoverCardAlign selectedAlign = HoverCardAlign.Center;
+    private int openDelay = 700;
+    private int closeDelay = 300;
+    private bool playgroundOpen;
+
+    private RenderFragment LinkPreview(Preview preview) =>
+        @<HoverCard Side="HoverCardSide.Top" OpenDelay="400" Width="300">
+            <Trigger>
+                <a class="hc-inline-link" href="@preview.Url" target="_blank" rel="noopener noreferrer">@preview.Text<span class="visually-hidden"> (opens in a new tab)</span></a>
+            </Trigger>
+            <ChildContent>
+                <span class="hc-preview">
+                    <span class="hc-preview-banner" style="--hc-brand: @preview.Color" aria-hidden="true">@preview.Monogram</span>
+                    <strong>@preview.Title</strong>
+                    <span>@preview.Description</span>
+                    <span class="hc-meta"><Icon Name="link" /> @preview.Host</span>
+                </span>
+            </ChildContent>
+        </HoverCard>;
+}

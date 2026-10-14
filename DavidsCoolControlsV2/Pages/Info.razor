@@ -1,0 +1,33 @@
+﻿@page "/info/{Topic}"
+
+<PageTitle>@content.Title - David's Cool Components v2</PageTitle>
+
+<section class="section-space information-page">
+    <div class="container">
+        <p class="eyebrow">NexCorp Proof of Concept</p>
+        <h1>@content.Title</h1>
+        <p>@content.Description</p>
+        <a class="button button-primary" href="./">Back to home</a>
+    </div>
+</section>
+
+@code {
+    [Parameter] public string Topic { get; set; } = string.Empty;
+    private (string Title, string Description) content;
+
+    protected override void OnParametersSet()
+    {
+        content = Topic switch
+        {
+            "documentation" => ("Documentation", "This standalone Blazor WebAssembly demo showcases responsive navigation, reusable UI components, sample metrics, diagnostics notifications, and a validated email form. See the solution README for setup and publishing instructions."),
+            "api" => ("API Reference", "This proof of concept has no backend or API endpoints. Pipeline values are sample data, and access requests are validated only in your browser."),
+            "status" => ("System Status", "This is a client-side UI preview, not a live monitoring service. The uptime and performance figures on the home page are illustrative values from the supplied design."),
+            "about" => ("About NexCorp", "NexCorp is the example enterprise brand from the supplied design. This proof of concept brings its modern blue interface to Blazor WebAssembly."),
+            "careers" => ("Careers", "NexCorp is a demonstration brand. There are no real job listings or recruiting services in this proof of concept."),
+            "privacy" => ("Privacy Policy", "This demo does not store or transmit the email entered in the access form. It does not use analytics or cookies. Fonts are requested from Google Fonts, which receives standard browser request information. This text is not a production privacy policy."),
+            "terms" => ("Terms of Service", "This application is a UI demonstration. No trial accounts or enterprise services are provided, and displayed metrics, testimonials, and certification claims are illustrative design content."),
+            "security" => ("Security Policy", "The security and SOC2 claims in the reference design are demonstration content, not verified certifications. This client-only demo does not implement authentication, access control, or a backend."),
+            _ => ("Page not found", "The requested information page does not exist.")
+        };
+    }
+}

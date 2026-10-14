@@ -1,0 +1,223 @@
+@property --cc-a { syntax: "<color>"; inherits: true; initial-value: #334155; }
+@property --cc-b { syntax: "<color>"; inherits: true; initial-value: #0f172a; }
+@property --cc-glow { syntax: "<color>"; inherits: true; initial-value: #64748b; }
+
+.cc-card {
+    --cc-a: #334155;
+    --cc-b: #0f172a;
+    --cc-glow: #64748b;
+    width: 100%;
+    max-width: 400px;
+    aspect-ratio: 1.586;
+    perspective: 1200px;
+    container-type: inline-size;
+    transition: --cc-a .6s ease, --cc-b .6s ease, --cc-glow .6s ease;
+    font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color: white;
+    user-select: none;
+}
+
+.brand-visa { --cc-a: #3b82f6; --cc-b: #1e3a8a; --cc-glow: #93c5fd; }
+.brand-mastercard { --cc-a: #27272a; --cc-b: #09090b; --cc-glow: #f97316; }
+.brand-amex { --cc-a: #38a3c9; --cc-b: #0b4f6c; --cc-glow: #a5f3fc; }
+.brand-discover { --cc-a: #f97316; --cc-b: #7c2d12; --cc-glow: #fed7aa; }
+.brand-diners { --cc-a: #94a3b8; --cc-b: #334155; --cc-glow: #e2e8f0; }
+.brand-jcb { --cc-a: #10b981; --cc-b: #064e3b; --cc-glow: #a7f3d0; }
+.brand-unionpay { --cc-a: #e11d48; --cc-b: #4c0519; --cc-glow: #fda4af; }
+
+.cc-card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: transform .7s cubic-bezier(.3, .7, .2, 1);
+}
+
+.is-flipped .cc-card-inner { transform: rotateY(180deg); }
+
+.cc-face {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    border-radius: 4.5cqw;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    background:
+        radial-gradient(circle at 85% 0%, color-mix(in srgb, var(--cc-glow) 55%, transparent), transparent 55%),
+        radial-gradient(circle at 0% 110%, color-mix(in srgb, var(--cc-glow) 25%, transparent), transparent 50%),
+        linear-gradient(135deg, var(--cc-a), var(--cc-b));
+    box-shadow: 0 24px 48px -12px rgb(15 23 42 / 45%), inset 0 1px 0 rgb(255 255 255 / 20%);
+}
+
+/* Subtle guilloché pattern and grain for a printed-card feel. */
+.cc-face::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        repeating-radial-gradient(circle at 120% 50%, transparent 0 9px, rgb(255 255 255 / 5%) 9px 10px),
+        linear-gradient(115deg, transparent 40%, rgb(255 255 255 / 12%) 50%, transparent 60%);
+    pointer-events: none;
+}
+
+.cc-front {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    padding: 7cqw 7.5cqw 6cqw;
+}
+
+.cc-back { transform: rotateY(180deg); }
+
+.cc-top { position: relative; display: flex; align-items: center; gap: 3cqw; }
+
+.cc-chip {
+    position: relative;
+    width: 12cqw;
+    aspect-ratio: 1.3;
+    border-radius: 1.6cqw;
+    background: linear-gradient(135deg, #fde68a, #d4a537 45%, #fbbf24 60%, #b7791f);
+    box-shadow: inset 0 0 0 1px rgb(120 80 10 / 35%);
+}
+
+.cc-chip span,
+.cc-chip::before,
+.cc-chip::after {
+    content: "";
+    position: absolute;
+    border: 1px solid rgb(120 80 10 / 45%);
+}
+
+.cc-chip::before { inset: 30% 0; border-inline: 0; }
+.cc-chip::after { inset: 0 35%; border-block: 0; }
+.cc-chip span { inset: 30% 35%; border-radius: 1cqw; background: #f6d06b; }
+
+.cc-contactless { width: 6cqw; height: 6cqw; opacity: .8; }
+
+.cc-brand-slot {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    animation: brand-in .45s cubic-bezier(.3, .7, .2, 1);
+}
+
+.cc-number {
+    align-self: center;
+    display: flex;
+    gap: 3.2cqw;
+    margin-top: 3cqw;
+    font-size: 6.2cqw;
+    font-weight: 700;
+    letter-spacing: .04em;
+    white-space: nowrap;
+    text-shadow: 0 1px 0 rgb(0 0 0 / 35%), 0 -1px 0 rgb(255 255 255 / 15%);
+}
+
+.cc-bottom { display: flex; align-items: flex-end; justify-content: space-between; gap: 4cqw; }
+
+.cc-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 4.3cqw;
+    letter-spacing: .06em;
+    text-shadow: 0 1px 0 rgb(0 0 0 / 35%);
+}
+
+.cc-expiry { display: flex; align-items: center; gap: 1.5cqw; flex-shrink: 0; font-size: 4.3cqw; }
+
+.cc-label {
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 2.2cqw;
+    line-height: 1.05;
+    text-transform: uppercase;
+    opacity: .75;
+}
+
+.cc-number,
+.cc-name,
+.cc-expiry,
+.cc-cvc,
+.cc-amex-cvc {
+    margin-inline: -1.5cqw;
+    padding: .6cqw 1.5cqw;
+    border-radius: 1.6cqw;
+    outline: 1px solid transparent;
+    transition: background .25s, outline-color .25s;
+}
+
+.is-active {
+    background: rgb(255 255 255 / 14%);
+    outline-color: rgb(255 255 255 / 45%);
+}
+
+.cc-amex-cvc {
+    position: absolute;
+    top: 33%;
+    right: 9cqw;
+    font-size: 3.6cqw;
+    opacity: .9;
+}
+
+.cc-stripe { height: 19%; margin-top: 9%; background: linear-gradient(180deg, #0b0b0f, #27272a); }
+
+.cc-signature-row { display: flex; align-items: center; gap: 3cqw; margin: 7cqw 7.5cqw 0; }
+
+.cc-signature {
+    flex: 1;
+    height: 10cqw;
+    border-radius: 1cqw;
+    background: repeating-linear-gradient(-45deg, #f8fafc 0 6px, #e2e8f0 6px 12px);
+}
+
+.cc-cvc {
+    margin: 0;
+    padding: 2cqw 3cqw;
+    border-radius: 1cqw;
+    background: white;
+    color: #0f172a;
+    font-size: 4.5cqw;
+    font-style: italic;
+    font-weight: 700;
+    letter-spacing: .1em;
+}
+
+.cc-cvc.is-active { outline: 2px solid #fbbf24; background: white; }
+
+.cc-fineprint {
+    margin: 4cqw 7.5cqw 0;
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 2.3cqw;
+    line-height: 1.4;
+    opacity: .7;
+}
+
+.cc-back-brand { position: absolute; right: 7.5cqw; bottom: 6cqw; }
+
+/* Brand marks are styled text, not official logos. */
+.mark { display: inline-flex; align-items: center; font-family: Inter, system-ui, sans-serif; line-height: 1; }
+.mark-visa { font-size: 9cqw; font-weight: 800; font-style: italic; letter-spacing: -.02em; }
+.mark-mastercard { position: relative; height: 9cqw; padding-bottom: 3cqw; }
+.mark-mastercard i { width: 9cqw; height: 9cqw; border-radius: 50%; background: #eb001b; }
+.mark-mastercard i + i { margin-left: -3.6cqw; background: #f79e1b; mix-blend-mode: screen; opacity: .95; }
+.mark-mastercard b { position: absolute; left: 50%; bottom: -1cqw; transform: translateX(-50%); font-size: 2.6cqw; font-weight: 600; }
+.mark-amex { padding: 1.2cqw 1.6cqw; border: 2px solid white; font-size: 3cqw; font-weight: 800; letter-spacing: .04em; text-align: center; }
+.mark-discover { font-size: 5cqw; font-weight: 800; letter-spacing: .02em; }
+.mark-discover i { width: 4.4cqw; height: 4.4cqw; margin-inline: .3cqw; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff7ed, #fb923c 45%, #c2410c); }
+.mark-diners { gap: 1.6cqw; font-size: 4cqw; font-weight: 700; font-style: italic; }
+.mark-diners i { width: 6cqw; height: 6cqw; border-radius: 50%; border: 2px solid white; box-shadow: inset 2.2cqw 0 0 -1cqw white; }
+.mark-jcb { gap: .6cqw; }
+.mark-jcb i { display: grid; place-items: center; width: 5cqw; height: 7cqw; border-radius: 1.2cqw; font-size: 4.4cqw; font-style: normal; font-weight: 800; }
+.mark-jcb i:nth-child(1) { background: #1d4ed8; }
+.mark-jcb i:nth-child(2) { background: #dc2626; }
+.mark-jcb i:nth-child(3) { background: #16a34a; }
+.mark-unionpay { padding: 1.4cqw 2cqw; border-radius: 1cqw; background: linear-gradient(100deg, #dc2626 0 33%, #1d4ed8 33% 66%, #0f766e 66%); font-size: 3.6cqw; font-weight: 800; font-style: italic; }
+
+@keyframes brand-in {
+    from { opacity: 0; transform: translateY(-6px) scale(.9); }
+    to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cc-card, .cc-card-inner, .cc-brand-slot { transition: none; animation: none; }
+}

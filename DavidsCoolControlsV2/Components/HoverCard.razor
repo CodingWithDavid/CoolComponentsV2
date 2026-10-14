@@ -1,0 +1,86 @@
+@implements IDisposable
+
+<span class="hover-card" data-state="@(isOpen ? "open" : "closed")" data-side="@Side.ToString().ToLowerInvariant()"
+      data-align="@Align.ToString().ToLowerInvariant()" style="--hc-offset: @(SideOffset)px; --hc-width: @(Width)px;"
+      @onmouseenter="OnPointerEnter" @onmouseleave="OnPointerLeave"
+      @onfocusin="OnFocusIn" @onfocusout="OnFocusOut" @onkeydown="OnKeyDown">
+    @Trigger
+    <span class="hover-card-content @ContentClass">
+        @ChildContent
+    </span>
+</span>
+
+@code {
+    private CancellationTokenSource? pending;
+    private bool isOpen;
+
+    /// <summary>The element that opens the card, usually a link or button so keyboard users can reach it.</summary>
+    [Parameter, EditorRequired] public RenderFragment Trigger { get; set; } = default!;
+
+    /// <summary>The card content.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    [Parameter] public HoverCardSide Side { get; set; } = HoverCardSide.Bottom;
+    [Parameter] public HoverCardAlign Align { get; set; } = HoverCardAlign.Center;
+
+    /// <summary>Milliseconds to wait before opening on hover.</summary>
+    [Parameter] public int OpenDelay { get; set; } = 700;
+
+    /// <summary>Milliseconds to wait before closing, giving the pointer time to move onto the card.</summary>
+    [Parameter] public int CloseDelay { get; set; } = 300;
+
+    /// <summary>Gap between the trigger and the card, in pixels.</summary>
+    [Parameter] public int SideOffset { get; set; } = 8;
+
+    /// <summary>Card width in pixels. It never exceeds the viewport width.</summary>
+    [Parameter] public int Width { get; set; } = 320;
+
+    [Parameter] public string? ContentClass { get; set; }
+
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+
+    private Task OnPointerEnter() => RequestAsync(true, OpenDelay);
+
+    private Task OnPointerLeave() => RequestAsync(false, CloseDelay);
+
+    // Keyboard users get the card immediately; there is no accidental pass-through to filter out.
+    private Task OnFocusIn() => RequestAsync(true, 0);
+
+    private Task OnFocusOut() => RequestAsync(false, CloseDelay);
+
+    private Task OnKeyDown(KeyboardEventArgs e) => e.Key == "Escape" ? RequestAsync(false, 0) : Task.CompletedTask;
+
+    private async Task RequestAsync(bool open, int delay)
+    {
+        pending?.Cancel();
+        pending?.Dispose();
+        pending = null;
+
+        if (isOpen == open)
+        {
+            return;
+        }
+
+        if (delay > 0)
+        {
+            pending = new CancellationTokenSource();
+            try
+            {
+                await Task.Delay(delay, pending.Token);
+            }
+            catch (TaskCanceledException)
+            {
+                return;
+            }
+        }
+
+        isOpen = open;
+        await OpenChanged.InvokeAsync(open);
+    }
+
+    public void Dispose()
+    {
+        pending?.Cancel();
+        pending?.Dispose();
+    }
+}

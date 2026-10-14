@@ -1,0 +1,148 @@
+@page "/"
+
+<PageTitle>David's Cool Components v2</PageTitle>
+
+<section class="hero quiz-hero">
+    <div class="container hero-grid quiz-grid">
+        <div class="hero-copy">
+            <div class="release-badge"><span class="status-dot"></span>Pure Blazor Questionnaire</div>
+            <h1>How well do you know <span>the Dark Knight?</span></h1>
+            <p class="hero-description">Six questions from the Batcave. Pick one answer, pick several, type your own, or skip the optional one. Your score is revealed at the end.</p>
+            <div class="trust-indicators">
+                <strong><Icon Name="check" /> Single &amp; multiple choice</strong>
+                <strong><Icon Name="check" /> Freeform answers</strong>
+                <strong><Icon Name="check" /> Press A–D or Enter</strong>
+            </div>
+        </div>
+
+        <div class="dashboard-wrap quiz-wrap">
+            <div class="dashboard quiz-card">
+                <div class="dashboard-title">
+                    <div class="window-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+                    <span>bat_quiz.razor</span>
+                </div>
+
+                @if (results is null)
+                {
+                    <Questionnaire @key="attempt" Items="Questions" SubmitText="Reveal my score" OnSubmit="ShowResults" />
+                }
+                else
+                {
+                    <div class="quiz-results" role="status">
+                        <div class="quiz-signal" aria-hidden="true"><span>🦇</span></div>
+                        <p class="quiz-score">@score / @ScoredCount</p>
+                        <h2>@Rank.Title</h2>
+                        <p class="quiz-verdict">@Rank.Verdict</p>
+                        <ul class="quiz-review">
+                            @foreach (var question in Questions)
+                            {
+                                var answer = results[question.Name];
+                                var correct = IsCorrect(question, answer);
+                                <li class="@(correct is null ? "is-opinion" : correct.Value ? "is-right" : "is-wrong")">
+                                    <span class="quiz-mark" aria-hidden="true">@(correct is null ? "★" : correct.Value ? "✓" : "✕")</span>
+                                    <span><strong>@question.Prompt</strong><br />@Describe(question, answer)</span>
+                                    <span class="visually-hidden">@(correct is null ? "Opinion" : correct.Value ? "Correct" : "Incorrect")</span>
+                                </li>
+                            }
+                        </ul>
+                        <button type="button" class="button button-dark quiz-restart" @onclick="Restart">Take it again</button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</section>
+
+@code {
+    private static readonly QuestionnaireItem[] Questions =
+    [
+        new()
+        {
+            Name = "identity", Prompt = "Who is behind the cowl?", Description = "Batman's secret identity.",
+            Choices =
+            [
+                new("bruce", "Bruce Wayne", "Billionaire, philanthropist, very tired."),
+                new("clark", "Clark Kent", "Mild-mannered reporter from the Daily Planet."),
+                new("oliver", "Oliver Queen", "Archer with a serious goatee."),
+            ],
+        },
+        new()
+        {
+            Name = "city", Prompt = "Which city does Batman protect?",
+            Choices = [new("gotham", "Gotham City"), new("metropolis", "Metropolis"), new("central", "Central City"), new("star", "Star City")],
+        },
+        new()
+        {
+            Name = "robins", Prompt = "Who has worn the Robin costume?", Description = "Select everyone who applies.", Multiple = true,
+            Choices = [new("dick", "Dick Grayson"), new("jason", "Jason Todd"), new("tim", "Tim Drake"), new("barry", "Barry Allen")],
+        },
+        new()
+        {
+            Name = "butler", Prompt = "Who keeps the Batcave running?", Description = "Batman's loyal butler and medic.",
+            Choices = [new("alfred", "Alfred Pennyworth"), new("lucius", "Lucius Fox"), new("gordon", "Commissioner Gordon")],
+        },
+        new()
+        {
+            Name = "villain", Prompt = "Who is the greatest Batman villain?", Description = "No wrong answers. Pick one or name your own.",
+            Choices =
+            [
+                new("joker", "The Joker", "Why so serious?"),
+                new("bane", "Bane", "Broke the Bat."),
+                new("riddler", "The Riddler", "Has a question for you."),
+            ],
+            InputLabel = "Another villain", InputPlaceholder = "Name another villain…",
+        },
+        new()
+        {
+            Name = "actor", Prompt = "Which live-action Batman is your favorite?", Description = "Optional. Skip it if you can't choose.",
+            Required = false,
+            Choices = [new("west", "Adam West"), new("keaton", "Michael Keaton"), new("bale", "Christian Bale"), new("pattinson", "Robert Pattinson")],
+        },
+    ];
+
+    // Questions with a correct answer; the others are opinion questions.
+    private static readonly Dictionary<string, string[]> AnswerKey = new()
+    {
+        ["identity"] = ["bruce"],
+        ["city"] = ["gotham"],
+        ["robins"] = ["dick", "jason", "tim"],
+        ["butler"] = ["alfred"],
+    };
+
+    private static int ScoredCount => AnswerKey.Count;
+
+    private IReadOnlyDictionary<string, QuestionnaireAnswer>? results;
+    private int score;
+    private int attempt;
+
+    private (string Title, string Verdict) Rank => score switch
+    {
+        4 => ("World's Greatest Detective", "Flawless. Alfred is preparing your cowl."),
+        3 => ("Dynamic Duo Material", "So close. Robin would be proud."),
+        2 => ("Gotham Rookie", "Not bad. Commissioner Gordon has a desk for you."),
+        _ => ("Arkham Visitor", "Better luck next time. The Riddler is laughing."),
+    };
+
+    private static bool? IsCorrect(QuestionnaireItem question, QuestionnaireAnswer answer) =>
+        AnswerKey.TryGetValue(question.Name, out var key) ? answer.Selected.SetEquals(key) : null;
+
+    private static string Describe(QuestionnaireItem question, QuestionnaireAnswer answer)
+    {
+        if (answer.Skipped) return "Skipped";
+        var picks = question.Choices.Where(c => answer.Selected.Contains(c.Value)).Select(c => c.Label).ToList();
+        if (!string.IsNullOrWhiteSpace(answer.Text)) picks.Add($"“{answer.Text.Trim()}”");
+        return picks.Count == 0 ? "No answer" : string.Join(", ", picks);
+    }
+
+    private void ShowResults(IReadOnlyDictionary<string, QuestionnaireAnswer> answers)
+    {
+        results = answers;
+        score = Questions.Count(q => IsCorrect(q, answers[q.Name]) == true);
+    }
+
+    private void Restart()
+    {
+        results = null;
+        attempt++;
+    }
+}
